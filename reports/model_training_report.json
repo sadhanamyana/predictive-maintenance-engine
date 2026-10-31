@@ -1,0 +1,79 @@
+{
+  "status": "passed",
+  "model_type": "GradientBoostingClassifier",
+  "selection_metric": "mean cross-validation ROC-AUC",
+  "cv_folds": 3,
+  "random_state": 42,
+  "training_rows": 15628,
+  "test_rows": 3907,
+  "parameter_grid": {
+    "learning_rate": [
+      0.05,
+      0.1
+    ],
+    "max_depth": [
+      2
+    ],
+    "n_estimators": [
+      100,
+      200
+    ],
+    "subsample": [
+      0.8
+    ]
+  },
+  "combinations_evaluated": 4,
+  "best_parameters": {
+    "learning_rate": 0.05,
+    "max_depth": 2,
+    "n_estimators": 200,
+    "subsample": 0.8
+  },
+  "best_cv_roc_auc": 0.7026155281770552,
+  "test_metrics": {
+    "accuracy": 0.668031737906322,
+    "precision": 0.6938164893617021,
+    "recall": 0.8473406414941129,
+    "f1": 0.7629318223359532,
+    "roc_auc": 0.7045949020573743
+  },
+  "confusion_matrix": [
+    [
+      523,
+      921
+    ],
+    [
+      376,
+      2087
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.5817575083426029,
+      "recall": 0.3621883656509695,
+      "f1-score": 0.44643619291506614,
+      "support": 1444.0
+    },
+    "1": {
+      "precision": 0.6938164893617021,
+      "recall": 0.8473406414941129,
+      "f1-score": 0.7629318223359532,
+      "support": 2463.0
+    },
+    "accuracy": 0.668031737906322,
+    "macro avg": {
+      "precision": 0.6377869988521525,
+      "recall": 0.6047645035725412,
+      "f1-score": 0.6046840076255097,
+      "support": 3907.0
+    },
+    "weighted avg": {
+      "precision": 0.6524002701163529,
+      "recall": 0.668031737906322,
+      "f1-score": 0.6459572411013075,
+      "support": 3907.0
+    }
+  },
+  "model_path": "artifacts/best_engine_condition_model.joblib",
+  "experiment_results_path": "reports/hyperparameter_experiments.csv"
+}

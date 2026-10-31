@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "source_dataset": "data/engine_data.csv",
+  "random_state": 42,
+  "test_size": 0.2,
+  "stratified": true,
+  "feature_columns": [
+    "Engine rpm",
+    "Lub oil pressure",
+    "Fuel pressure",
+    "Coolant pressure",
+    "lub oil temp",
+    "Coolant temp"
+  ],
+  "target_column": "Engine Condition",
+  "train_rows": 15628,
+  "test_rows": 3907,
+  "artifacts": [
+    "X_train.csv",
+    "X_test.csv",
+    "y_train.csv",
+    "y_test.csv"
+  ]
+}
