@@ -125,9 +125,15 @@ jobs:
 
       - name: Restore train and test artifacts
         run: |
+          set -euo pipefail
           mkdir -p artifacts reports
+
           cp workflow-input/artifacts/*.csv artifacts/
+          cp workflow-input/reports/data_registration_report.json reports/
           cp workflow-input/reports/data_preparation_report.json reports/
+
+          echo "Restored reports:"
+          ls -lh reports/
 
       - name: Train and evaluate candidate models
         run: python src/model_training.py
