@@ -162,12 +162,32 @@ jobs:
           name: trained-model-and-reports
           path: workflow-output
 
-      - name: Copy generated outputs into repository
+      - name: Copy and verify generated outputs
         run: |
+          set -euo pipefail
+
+          echo "Downloaded artifact contents:"
+          find workflow-output -type f -print
+
           mkdir -p artifacts reports
+
+          test -f workflow-output/artifacts/best_engine_condition_model.joblib
           cp workflow-output/artifacts/best_engine_condition_model.joblib artifacts/
-          cp workflow-output/reports/*.json reports/
-          cp workflow-output/reports/hyperparameter_experiments.csv reports/
+
+          for file in \
+            data_registration_report.json \
+            data_preparation_report.json \
+            model_training_report.json \
+            hyperparameter_experiments.csv; do
+            if [ ! -f "workflow-output/reports/$file" ]; then
+              echo "ERROR: Required report is missing: $file"
+              exit 1
+            fi
+            cp "workflow-output/reports/$file" reports/
+          done
+
+          echo "Verified files to publish:"
+          ls -lh artifacts/best_engine_condition_model.joblib reports/
 
       - name: Commit and push model and reports
         run: |
