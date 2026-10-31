@@ -93,6 +93,7 @@ jobs:
             artifacts/X_test.csv
             artifacts/y_train.csv
             artifacts/y_test.csv
+            reports/data_registration_report.json
             reports/data_preparation_report.json
           if-no-files-found: error
           retention-days: 7
