@@ -144,6 +144,10 @@ jobs:
           name: trained-model-and-reports
           path: |
             artifacts/best_engine_condition_model.joblib
+            artifacts/X_train.csv
+            artifacts/X_test.csv
+            artifacts/y_train.csv
+            artifacts/y_test.csv
             reports/data_registration_report.json
             reports/data_preparation_report.json
             reports/hyperparameter_experiments.csv
@@ -181,6 +185,14 @@ jobs:
           test -f workflow-output/artifacts/best_engine_condition_model.joblib
           cp workflow-output/artifacts/best_engine_condition_model.joblib artifacts/
 
+          for file in X_train.csv X_test.csv y_train.csv y_test.csv; do
+            if [ ! -f "workflow-output/artifacts/$file" ]; then
+              echo "ERROR: Required split artifact is missing: $file"
+              exit 1
+            fi
+            cp "workflow-output/artifacts/$file" artifacts/
+          done
+
           for file in \
             data_registration_report.json \
             data_preparation_report.json \
@@ -193,6 +205,9 @@ jobs:
             cp "workflow-output/reports/$file" reports/
           done
 
+          echo "Verified model, split datasets, and reports:"
+          ls -lh artifacts/ reports/
+
           echo "Verified files to publish:"
           ls -lh artifacts/best_engine_condition_model.joblib reports/
 
@@ -202,6 +217,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add artifacts/best_engine_condition_model.joblib
+          git add artifacts/X_train.csv artifacts/X_test.csv
+          git add artifacts/y_train.csv artifacts/y_test.csv
           git add reports/data_registration_report.json
           git add reports/data_preparation_report.json
           git add reports/hyperparameter_experiments.csv
