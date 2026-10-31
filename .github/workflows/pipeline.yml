@@ -1,0 +1,188 @@
+name: Engine Condition ML Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "artifacts/**"
+      - "reports/**"
+      - "mlflow.db"
+      - "mlruns/**"
+      - "*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: engine-condition-pipeline-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  register-data:
+    name: 1. Register and validate data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-pipeline.txt
+
+      - name: Install pipeline dependencies
+        run: python -m pip install -r requirements-pipeline.txt
+
+      - name: Validate and register dataset
+        run: python src/data_registration.py
+
+      - name: Upload registered data and validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: registered-data
+          path: |
+            data/engine_data.csv
+            reports/data_registration_report.json
+          if-no-files-found: error
+          retention-days: 7
+
+  prepare-data:
+    name: 2. Prepare workflow data artifacts
+    needs: register-data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-pipeline.txt
+
+      - name: Install pipeline dependencies
+        run: python -m pip install -r requirements-pipeline.txt
+
+      - name: Download registered data artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: registered-data
+          path: workflow-input
+
+      - name: Restore registration report
+        run: |
+          mkdir -p reports
+          cp workflow-input/reports/data_registration_report.json reports/
+
+      - name: Prepare train and test datasets
+        run: python src/data_preparation.py
+
+      - name: Upload prepared datasets and report
+        uses: actions/upload-artifact@v4
+        with:
+          name: prepared-data
+          path: |
+            artifacts/X_train.csv
+            artifacts/X_test.csv
+            artifacts/y_train.csv
+            artifacts/y_test.csv
+            reports/data_preparation_report.json
+          if-no-files-found: error
+          retention-days: 7
+
+  train-model:
+    name: 3. Train, tune, and evaluate model
+    needs: prepare-data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-pipeline.txt
+
+      - name: Install pipeline dependencies
+        run: python -m pip install -r requirements-pipeline.txt
+
+      - name: Download prepared data workflow artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: prepared-data
+          path: workflow-input
+
+      - name: Restore train and test artifacts
+        run: |
+          mkdir -p artifacts reports
+          cp workflow-input/artifacts/*.csv artifacts/
+          cp workflow-input/reports/data_preparation_report.json reports/
+
+      - name: Train and evaluate candidate models
+        run: python src/model_training.py
+
+      - name: Upload trained model and evaluation reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model-and-reports
+          path: |
+            artifacts/best_engine_condition_model.joblib
+            reports/data_registration_report.json
+            reports/data_preparation_report.json
+            reports/hyperparameter_experiments.csv
+            reports/model_training_report.json
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-results:
+    name: 4. Publish model and reports to GitHub
+    needs: train-model
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download trained model and reports
+        uses: actions/download-artifact@v4
+        with:
+          name: trained-model-and-reports
+          path: workflow-output
+
+      - name: Copy generated outputs into repository
+        run: |
+          mkdir -p artifacts reports
+          cp workflow-output/artifacts/best_engine_condition_model.joblib artifacts/
+          cp workflow-output/reports/*.json reports/
+          cp workflow-output/reports/hyperparameter_experiments.csv reports/
+
+      - name: Commit and push model and reports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add artifacts/best_engine_condition_model.joblib
+          git add reports/data_registration_report.json
+          git add reports/data_preparation_report.json
+          git add reports/hyperparameter_experiments.csv
+          git add reports/model_training_report.json
+
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+          else
+            git commit -m "Update engine model and reports [skip ci]"
+            git push origin HEAD:main
+          fi
